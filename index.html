@@ -2,7 +2,9 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="format-detection" content="telephone=no">
   <title>大觉寺总图 · 现状与设计对比</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -15,28 +17,64 @@
     }
 
     .page {
-      width: 100vw;
-      height: 100vh;
+      width: 100%;
+      height: 100%;
+      display: -webkit-box;
+      display: -ms-flexbox;
       display: flex;
+      -webkit-box-align: center;
+      -ms-flex-align: center;
       align-items: center;
+      -webkit-box-pack: center;
+      -ms-flex-pack: center;
       justify-content: center;
       background: #111;
     }
 
+    .viewport {
+      width: 100%;
+      height: 100%;
+      display: -webkit-box;
+      display: -ms-flexbox;
+      display: flex;
+      -webkit-box-align: center;
+      -ms-flex-align: center;
+      align-items: center;
+      -webkit-box-pack: center;
+      -ms-flex-pack: center;
+      justify-content: center;
+      overflow: hidden;
+      -ms-touch-action: none;
+      touch-action: none;
+    }
+
     .frame-wrap {
+      -webkit-transform-origin: center center;
+      -ms-transform-origin: center center;
       transform-origin: center center;
     }
 
     .frame {
       position: relative;
       overflow: hidden;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
       user-select: none;
       cursor: ew-resize;
+      -ms-touch-action: none;
       touch-action: none;
       background: #000;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    .layer { position: absolute; inset: 0; }
+    .layer {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+    }
 
     .layer img,
     .after-layer img {
@@ -48,8 +86,10 @@
 
     .after-layer {
       position: absolute;
-      inset: 0;
-      clip-path: inset(0 calc(100% - var(--reveal, 12%)) 0 0);
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
     }
 
     .divider {
@@ -57,10 +97,17 @@
       top: 0;
       bottom: 0;
       left: 12%;
-      width: 3px;
+      width: 5px;
+      -webkit-transform: translateX(-50%);
+      -ms-transform: translateX(-50%);
       transform: translateX(-50%);
-      background: rgba(255, 255, 255, 0.92);
-      box-shadow: 0 0 12px rgba(0, 0, 0, 0.45);
+      background: #f5a623;
+      background: -webkit-linear-gradient(top, #ffe566, #f5a623, #ffe566);
+      background: linear-gradient(to bottom, #ffe566, #f5a623, #ffe566);
+      box-shadow:
+        0 0 0 2px rgba(0, 0, 0, 0.45),
+        0 0 20px rgba(255, 200, 50, 0.85),
+        0 0 40px rgba(255, 160, 0, 0.45);
       z-index: 10;
       pointer-events: none;
     }
@@ -69,136 +116,697 @@
       position: absolute;
       top: 50%;
       left: 12%;
+      -webkit-transform: translate(-50%, -50%);
+      -ms-transform: translate(-50%, -50%);
       transform: translate(-50%, -50%);
-      width: 44px;
-      height: 44px;
+      width: 56px;
+      height: 56px;
       border-radius: 50%;
-      background: rgba(255, 255, 255, 0.95);
-      border: 2px solid rgba(255, 255, 255, 0.6);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+      background: #fff;
+      border: 3px solid #f5a623;
+      box-shadow:
+        0 0 0 4px rgba(255, 255, 255, 0.55),
+        0 6px 28px rgba(0, 0, 0, 0.55);
       z-index: 11;
       pointer-events: none;
+      display: -webkit-box;
+      display: -ms-flexbox;
+      display: flex;
+      -webkit-box-align: center;
+      -ms-flex-align: center;
+      align-items: center;
+      -webkit-box-pack: center;
+      -ms-flex-pack: center;
+      justify-content: center;
     }
 
     .handle::before,
     .handle::after {
       content: "";
-      position: absolute;
-      top: 50%;
       width: 0;
       height: 0;
       border-style: solid;
-      transform: translateY(-50%);
+      -webkit-flex-shrink: 0;
+      -ms-flex-negative: 0;
+      flex-shrink: 0;
     }
 
     .handle::before {
-      left: 10px;
-      border-width: 6px 8px 6px 0;
-      border-color: transparent #555 transparent transparent;
+      border-width: 8px 10px 8px 0;
+      border-color: transparent #e67e00 transparent transparent;
+      margin-right: 4px;
     }
 
     .handle::after {
-      right: 10px;
-      border-width: 6px 0 6px 8px;
-      border-color: transparent transparent transparent #555;
+      border-width: 8px 0 8px 10px;
+      border-color: transparent transparent transparent #e67e00;
+      margin-left: 4px;
+    }
+
+    .handle-grip {
+      width: 4px;
+      height: 22px;
+      border-radius: 2px;
+      background: #f5a623;
+      box-shadow: -6px 0 0 #f5a623, 6px 0 0 #f5a623;
+      -webkit-flex-shrink: 0;
+      -ms-flex-negative: 0;
+      flex-shrink: 0;
+    }
+
+    .loading {
+      display: none;
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 200;
+      -webkit-box-orient: vertical;
+      -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+      flex-direction: column;
+      -webkit-box-align: center;
+      -ms-flex-align: center;
+      align-items: center;
+      -webkit-box-pack: center;
+      -ms-flex-pack: center;
+      justify-content: center;
+      background: #0a0a0a;
+      color: #ddd;
+      font: 15px/1.5 "PingFang SC", "Microsoft YaHei", sans-serif;
+      text-align: center;
+      padding: 24px;
+    }
+
+    .loading.show {
+      display: -webkit-box;
+      display: -ms-flexbox;
+      display: flex;
+    }
+
+    .loading-spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid rgba(255, 255, 255, 0.15);
+      border-top-color: #f5a623;
+      border-radius: 50%;
+      -webkit-animation: spin 0.8s linear infinite;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 16px;
+    }
+
+    @-webkit-keyframes spin {
+      to { -webkit-transform: rotate(360deg); transform: rotate(360deg); }
+    }
+
+    @keyframes spin {
+      to { -webkit-transform: rotate(360deg); transform: rotate(360deg); }
+    }
+
+    .loading-status {
+      color: #aaa;
+      font-size: 13px;
+      margin-top: 6px;
+    }
+
+    .zoom-hint {
+      display: none;
+      position: fixed;
+      bottom: 16px;
+      left: 50%;
+      -webkit-transform: translateX(-50%);
+      -ms-transform: translateX(-50%);
+      transform: translateX(-50%);
+      padding: 8px 14px;
+      border-radius: 20px;
+      background: rgba(0, 0, 0, 0.72);
+      color: #ffe566;
+      font: 13px/1.4 "PingFang SC", "Microsoft YaHei", sans-serif;
+      pointer-events: none;
+      z-index: 100;
+      white-space: nowrap;
+    }
+
+    .zoom-hint.visible {
+      display: block;
+    }
+
+    @media (max-width: 900px) {
+      html, body {
+        height: -webkit-fill-available;
+      }
+
+      .page {
+        min-height: -webkit-fill-available;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .divider { width: 6px; }
+      .handle { width: 68px; height: 68px; border-width: 4px; }
+      .handle::before { border-width: 9px 11px 9px 0; }
+      .handle::after { border-width: 9px 0 9px 11px; }
+      .handle-grip { height: 26px; }
     }
   </style>
 </head>
 <body>
+  <div class="loading" id="loading">
+    <div class="loading-spinner"></div>
+    <div>图片加载中…</div>
+    <div class="loading-status" id="loadingStatus">请稍候</div>
+  </div>
+
   <div class="page">
-    <div class="frame-wrap" id="frameWrap">
-      <div class="frame" id="compare">
-        <div class="layer">
-          <img src="before.jpg" alt="现状" id="beforeImg">
+    <div class="viewport" id="viewport">
+      <div class="frame-wrap" id="frameWrap">
+        <div class="frame" id="compare">
+          <div class="layer">
+            <img src="before.jpg" alt="现状" id="beforeImg" decoding="async">
+          </div>
+          <div class="after-layer" id="afterLayer">
+            <img src="after.jpg" alt="设计总图" id="afterImg" decoding="async">
+          </div>
+          <div class="divider" id="divider"></div>
+          <div class="handle" id="handle"><span class="handle-grip"></span></div>
         </div>
-        <div class="after-layer">
-          <img src="after.jpg" alt="设计总图" id="afterImg">
-        </div>
-        <div class="divider" id="divider"></div>
-        <div class="handle" id="handle"></div>
       </div>
     </div>
   </div>
+  <div class="zoom-hint" id="zoomHint">双指捏合放大 · 双击还原</div>
 
   <script>
-    const frameWrap = document.getElementById('frameWrap');
-    const compare = document.getElementById('compare');
-    const beforeImg = document.getElementById('beforeImg');
-    const afterImg = document.getElementById('afterImg');
-    const divider = document.getElementById('divider');
-    const handle = document.getElementById('handle');
+    (function () {
+      var viewport = document.getElementById('viewport');
+      var frameWrap = document.getElementById('frameWrap');
+      var compare = document.getElementById('compare');
+      var afterLayer = document.getElementById('afterLayer');
+      var beforeImg = document.getElementById('beforeImg');
+      var afterImg = document.getElementById('afterImg');
+      var divider = document.getElementById('divider');
+      var handle = document.getElementById('handle');
+      var zoomHint = document.getElementById('zoomHint');
+      var loading = document.getElementById('loading');
+      var loadingStatus = document.getElementById('loadingStatus');
 
-    let dragging = false;
-    let activePointer = null;
-    let dragOffset = 0;
-    let pos = 0.12;
-    let imgW = 0;
-    let imgH = 0;
+      var dragging = false;
+      var activePointerId = null;
+      var dragOffset = 0;
+      var pos = 0.12;
+      var imgW = 0;
+      var imgH = 0;
+      var inited = false;
+      var eventsBound = false;
 
-    function layoutFrame() {
-      if (!imgW || !imgH) return;
-      compare.style.width = imgW + 'px';
-      compare.style.height = imgH + 'px';
-      const scale = Math.min(1, window.innerWidth / imgW, window.innerHeight / imgH);
-      frameWrap.style.transform = 'scale(' + scale + ')';
-    }
+      var isMobile = false;
+      var zoom = 1;
+      var panX = 0;
+      var panY = 0;
+      var minZoom = 1;
+      var maxZoom = 4;
 
-    function setPosition(ratio) {
-      pos = Math.max(0, Math.min(1, ratio));
-      const pct = (pos * 100) + '%';
-      compare.style.setProperty('--reveal', pct);
-      divider.style.left = pct;
-      handle.style.left = pct;
-    }
+      var gestureMode = 'idle';
+      var pinchStartDist = 0;
+      var pinchStartZoom = 1;
+      var panStartX = 0;
+      var panStartY = 0;
+      var panOriginX = 0;
+      var panOriginY = 0;
+      var activePointers = {};
+      var lastTapTime = 0;
 
-    function ratioFromEvent(e) {
-      const rect = compare.getBoundingClientRect();
-      return (e.clientX - rect.left) / rect.width;
-    }
+      var supportsClipPath = (function () {
+        var el = document.createElement('div');
+        return 'clipPath' in el.style || 'webkitClipPath' in el.style;
+      })();
 
-    compare.addEventListener('pointerdown', (e) => {
-      if (e.button !== 0) return;
-      dragging = true;
-      activePointer = e.pointerId;
-      dragOffset = ratioFromEvent(e) - pos;
-      compare.setPointerCapture(e.pointerId);
-      e.preventDefault();
-    });
+      function detectMobile() {
+        var ua = navigator.userAgent || '';
+        var isWeChat = /MicroMessenger/i.test(ua);
+        var touch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+        var narrow = window.innerWidth <= 900;
+        isMobile = isWeChat || (touch && narrow);
 
-    compare.addEventListener('pointermove', (e) => {
-      if (!dragging || e.pointerId !== activePointer) return;
-      setPosition(ratioFromEvent(e) - dragOffset);
-    });
-
-    function endDrag(e) {
-      if (!dragging || (e && e.pointerId !== activePointer)) return;
-      dragging = false;
-      activePointer = null;
-      if (e) compare.releasePointerCapture(e.pointerId);
-    }
-
-    compare.addEventListener('pointerup', endDrag);
-    compare.addEventListener('pointercancel', endDrag);
-    window.addEventListener('resize', layoutFrame);
-
-    function init() {
-      imgW = beforeImg.naturalWidth;
-      imgH = beforeImg.naturalHeight;
-      layoutFrame();
-      setPosition(pos);
-    }
-
-    if (beforeImg.complete && afterImg.complete) {
-      init();
-    } else {
-      let loaded = 0;
-      function onLoad() {
-        loaded += 1;
-        if (loaded === 2) init();
+        if (zoomHint) {
+          zoomHint.className = isMobile ? 'zoom-hint visible' : 'zoom-hint';
+        }
+        if (loading) {
+          loading.className = isMobile ? 'loading show' : 'loading';
+        }
+        if (!isMobile) {
+          zoom = 1;
+          panX = 0;
+          panY = 0;
+        }
       }
-      beforeImg.addEventListener('load', onLoad);
-      afterImg.addEventListener('load', onLoad);
-    }
+
+      function setLoadingText(text) {
+        if (loadingStatus) loadingStatus.textContent = text;
+      }
+
+      function hideLoading() {
+        if (loading) loading.className = 'loading';
+      }
+
+      function getScreenHeight() {
+        return window.innerHeight || document.documentElement.clientHeight || 1;
+      }
+
+      function getFitScale() {
+        if (!imgW || !imgH) return 1;
+        return Math.min(1, window.innerWidth / imgW, getScreenHeight() / imgH);
+      }
+
+      function setTransform(el, value) {
+        el.style.transform = value;
+        el.style.webkitTransform = value;
+        el.style.msTransform = value;
+      }
+
+      function clampPan() {
+        var fit = getFitScale();
+        var scale = fit * zoom;
+        var displayW = imgW * scale;
+        var displayH = imgH * scale;
+        var maxPanX = Math.max(0, (displayW - window.innerWidth) / 2);
+        var maxPanY = Math.max(0, (displayH - (getScreenHeight() - 48)) / 2);
+        panX = Math.max(-maxPanX, Math.min(maxPanX, panX));
+        panY = Math.max(-maxPanY, Math.min(maxPanY, panY));
+      }
+
+      function layoutFrame() {
+        if (!imgW || !imgH) return;
+        compare.style.width = imgW + 'px';
+        compare.style.height = imgH + 'px';
+        var fit = getFitScale();
+        if (isMobile) {
+          clampPan();
+          setTransform(frameWrap, 'translate(' + panX + 'px, ' + panY + 'px) scale(' + (fit * zoom) + ')');
+        } else {
+          setTransform(frameWrap, 'scale(' + fit + ')');
+        }
+      }
+
+      function resetZoom() {
+        zoom = 1;
+        panX = 0;
+        panY = 0;
+        layoutFrame();
+      }
+
+      function setAfterClip(ratio) {
+        if (supportsClipPath) {
+          var hideRight = ((1 - ratio) * 100) + '%';
+          var clipValue = 'inset(0 ' + hideRight + ' 0 0)';
+          afterLayer.style.clipPath = clipValue;
+          afterLayer.style.webkitClipPath = clipValue;
+          afterLayer.style.clip = 'auto';
+        } else if (imgW && imgH) {
+          var right = Math.round(imgW * ratio);
+          afterLayer.style.clip = 'rect(0px, ' + right + 'px, ' + imgH + 'px, 0px)';
+        }
+      }
+
+      function setPosition(ratio) {
+        pos = Math.max(0, Math.min(1, ratio));
+        var pct = (pos * 100) + '%';
+        divider.style.left = pct;
+        handle.style.left = pct;
+        setAfterClip(pos);
+      }
+
+      function readImageSize(img) {
+        return {
+          w: img.naturalWidth || 0,
+          h: img.naturalHeight || 0
+        };
+      }
+
+      function clientXFromEvent(e) {
+        if (e.touches && e.touches.length) return e.touches[0].clientX;
+        if (e.changedTouches && e.changedTouches.length) return e.changedTouches[0].clientX;
+        return e.clientX;
+      }
+
+      function clientYFromEvent(e) {
+        if (e.touches && e.touches.length) return e.touches[0].clientY;
+        if (e.changedTouches && e.changedTouches.length) return e.changedTouches[0].clientY;
+        return e.clientY;
+      }
+
+      function touchDistanceFromPoints(a, b) {
+        var dx = a.x - b.x;
+        var dy = a.y - b.y;
+        return Math.sqrt(dx * dx + dy * dy);
+      }
+
+      function touchDistance(touches) {
+        return touchDistanceFromPoints(
+          { x: touches[0].clientX, y: touches[0].clientY },
+          { x: touches[1].clientX, y: touches[1].clientY }
+        );
+      }
+
+      function isNearSlider(clientX) {
+        var rect = compare.getBoundingClientRect();
+        var sliderX = rect.left + rect.width * pos;
+        return Math.abs(clientX - sliderX) < (isMobile ? 56 : 36);
+      }
+
+      function ratioFromEvent(e) {
+        var rect = compare.getBoundingClientRect();
+        var width = rect.width || imgW;
+        if (!width) return pos;
+        return (clientXFromEvent(e) - rect.left) / width;
+      }
+
+      function startSliderDrag(e) {
+        if (e.type === 'mousedown' && e.button !== 0) return;
+        dragging = true;
+        gestureMode = 'slider';
+        dragOffset = ratioFromEvent(e) - pos;
+        if (e.preventDefault) e.preventDefault();
+        var captureTarget = isMobile ? viewport : compare;
+        if (e.pointerId !== undefined && captureTarget.setPointerCapture) {
+          activePointerId = e.pointerId;
+          captureTarget.setPointerCapture(e.pointerId);
+        }
+      }
+
+      function moveSliderDrag(e) {
+        if (!dragging || gestureMode !== 'slider') return;
+        if (activePointerId !== null && e.pointerId !== undefined && e.pointerId !== activePointerId) return;
+        if (e.preventDefault) e.preventDefault();
+        setPosition(ratioFromEvent(e) - dragOffset);
+      }
+
+      function endSliderDrag(e) {
+        if (!dragging || gestureMode !== 'slider') return;
+        if (activePointerId !== null && e.pointerId !== undefined && e.pointerId !== activePointerId) return;
+        dragging = false;
+        gestureMode = 'idle';
+        var captureTarget = isMobile ? viewport : compare;
+        if (activePointerId !== null && captureTarget.releasePointerCapture) {
+          captureTarget.releasePointerCapture(activePointerId);
+        }
+        activePointerId = null;
+      }
+
+      function startPan(e) {
+        gestureMode = 'pan';
+        panStartX = clientXFromEvent(e);
+        panStartY = clientYFromEvent(e);
+        panOriginX = panX;
+        panOriginY = panY;
+        if (e.preventDefault) e.preventDefault();
+      }
+
+      function movePan(e) {
+        if (gestureMode !== 'pan') return;
+        panX = panOriginX + (clientXFromEvent(e) - panStartX);
+        panY = panOriginY + (clientYFromEvent(e) - panStartY);
+        layoutFrame();
+        if (e.preventDefault) e.preventDefault();
+      }
+
+      function endPan() {
+        if (gestureMode === 'pan') gestureMode = 'idle';
+      }
+
+      function startPinch(dist) {
+        gestureMode = 'pinch';
+        pinchStartDist = dist;
+        pinchStartZoom = zoom;
+      }
+
+      function movePinch(dist) {
+        if (gestureMode !== 'pinch' || !pinchStartDist) return;
+        zoom = Math.max(minZoom, Math.min(maxZoom, pinchStartZoom * (dist / pinchStartDist)));
+        if (zoom <= 1.02) {
+          zoom = 1;
+          panX = 0;
+          panY = 0;
+        }
+        layoutFrame();
+      }
+
+      function endPinch() {
+        if (gestureMode === 'pinch') gestureMode = 'idle';
+        if (zoom <= 1.02) resetZoom();
+      }
+
+      function pointerCount() {
+        var count = 0;
+        for (var id in activePointers) {
+          if (activePointers.hasOwnProperty(id)) count += 1;
+        }
+        return count;
+      }
+
+      function getPointerPoints() {
+        var pts = [];
+        for (var id in activePointers) {
+          if (activePointers.hasOwnProperty(id)) pts.push(activePointers[id]);
+        }
+        return pts;
+      }
+
+      function onMobilePointerDown(e) {
+        activePointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+
+        if (pointerCount() === 2) {
+          var pts = getPointerPoints();
+          startPinch(touchDistanceFromPoints(pts[0], pts[1]));
+          dragging = false;
+          if (e.preventDefault) e.preventDefault();
+          return;
+        }
+
+        if (pointerCount() === 1) {
+          var now = Date.now();
+          if (now - lastTapTime < 300) {
+            resetZoom();
+            lastTapTime = 0;
+            if (e.preventDefault) e.preventDefault();
+            return;
+          }
+          lastTapTime = now;
+          if (zoom > 1.05 && !isNearSlider(e.clientX)) {
+            startPan(e);
+            return;
+          }
+        }
+
+        startSliderDrag(e);
+      }
+
+      function onMobilePointerMove(e) {
+        if (!activePointers[e.pointerId]) return;
+        activePointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+
+        if (pointerCount() >= 2) {
+          var pts = getPointerPoints();
+          if (pts.length >= 2) {
+            if (gestureMode !== 'pinch') startPinch(touchDistanceFromPoints(pts[0], pts[1]));
+            movePinch(touchDistanceFromPoints(pts[0], pts[1]));
+          }
+          if (e.preventDefault) e.preventDefault();
+          return;
+        }
+
+        if (gestureMode === 'pan') {
+          movePan(e);
+          return;
+        }
+
+        moveSliderDrag(e);
+      }
+
+      function onMobilePointerUp(e) {
+        delete activePointers[e.pointerId];
+        if (gestureMode === 'pinch' && pointerCount() < 2) endPinch();
+        if (gestureMode === 'pan' && pointerCount() === 0) endPan();
+        if (gestureMode === 'slider') endSliderDrag(e);
+      }
+
+      function onMobileTouchStart(e) {
+        if (e.touches.length === 2) {
+          startPinch(touchDistance(e.touches));
+          if (e.preventDefault) e.preventDefault();
+          return;
+        }
+        if (e.touches.length === 1) {
+          var now = Date.now();
+          if (now - lastTapTime < 300) {
+            resetZoom();
+            lastTapTime = 0;
+            if (e.preventDefault) e.preventDefault();
+            return;
+          }
+          lastTapTime = now;
+          if (zoom > 1.05 && !isNearSlider(e.touches[0].clientX)) {
+            startPan(e);
+            return;
+          }
+        }
+        startSliderDrag(e);
+      }
+
+      function onMobileTouchMove(e) {
+        if (e.touches.length >= 2) {
+          if (gestureMode !== 'pinch') startPinch(touchDistance(e.touches));
+          movePinch(touchDistance(e.touches));
+          if (e.preventDefault) e.preventDefault();
+          return;
+        }
+        if (gestureMode === 'pan') {
+          movePan(e);
+          return;
+        }
+        moveSliderDrag(e);
+      }
+
+      function onMobileTouchEnd(e) {
+        if (gestureMode === 'pinch' && (!e.touches || e.touches.length < 2)) endPinch();
+        if (gestureMode === 'pan' && (!e.touches || !e.touches.length)) endPan();
+        if (gestureMode === 'slider') endSliderDrag(e);
+      }
+
+      function bindEvents() {
+        if (eventsBound) return;
+        eventsBound = true;
+
+        if (isMobile) {
+          if (window.PointerEvent) {
+            viewport.addEventListener('pointerdown', onMobilePointerDown, false);
+            viewport.addEventListener('pointermove', onMobilePointerMove, false);
+            viewport.addEventListener('pointerup', onMobilePointerUp, false);
+            viewport.addEventListener('pointercancel', onMobilePointerUp, false);
+          } else {
+            viewport.addEventListener('touchstart', onMobileTouchStart, false);
+            viewport.addEventListener('touchmove', onMobileTouchMove, false);
+            viewport.addEventListener('touchend', onMobileTouchEnd, false);
+            viewport.addEventListener('touchcancel', onMobileTouchEnd, false);
+          }
+        } else if (window.PointerEvent) {
+          compare.addEventListener('pointerdown', startSliderDrag, false);
+          compare.addEventListener('pointermove', moveSliderDrag, false);
+          compare.addEventListener('pointerup', endSliderDrag, false);
+          compare.addEventListener('pointercancel', endSliderDrag, false);
+        } else {
+          compare.addEventListener('mousedown', startSliderDrag, false);
+          document.addEventListener('mousemove', moveSliderDrag, false);
+          document.addEventListener('mouseup', endSliderDrag, false);
+        }
+      }
+
+      function onResize() {
+        detectMobile();
+        layoutFrame();
+      }
+
+      if (window.addEventListener) {
+        window.addEventListener('resize', onResize, false);
+        window.addEventListener('orientationchange', onResize, false);
+        window.addEventListener('pageshow', function (e) {
+          if (e.persisted) onResize();
+        }, false);
+      } else if (window.attachEvent) {
+        window.attachEvent('onresize', onResize);
+      }
+
+      function init() {
+        var size = readImageSize(beforeImg);
+        if (!size.w || !size.h) return false;
+
+        imgW = size.w;
+        imgH = size.h;
+        detectMobile();
+        bindEvents();
+        layoutFrame();
+        setPosition(pos);
+
+        if (!inited) {
+          inited = true;
+          hideLoading();
+        }
+        return true;
+      }
+
+      function waitForImage(img, label, done) {
+        var finished = false;
+
+        function finish(ok) {
+          if (finished) return;
+          finished = true;
+          if (ok && label) setLoadingText(label + ' 已加载');
+          done();
+        }
+
+        function tryReady() {
+          var size = readImageSize(img);
+          if (size.w > 0 && size.h > 0) {
+            finish(true);
+            return true;
+          }
+          return false;
+        }
+
+        if (tryReady()) return;
+
+        function onDone() {
+          if (!tryReady()) finish(false);
+        }
+
+        img.addEventListener('load', onDone, false);
+        img.addEventListener('error', onDone, false);
+        if (img.decode) {
+          img.decode().then(onDone).catch(onDone);
+        }
+
+        var attempts = 0;
+        (function poll() {
+          if (finished) return;
+          if (tryReady()) return;
+          attempts += 1;
+          if (attempts > 80) {
+            finish(false);
+            return;
+          }
+          setTimeout(poll, 100);
+        })();
+      }
+
+      function boot() {
+        detectMobile();
+        bindEvents();
+
+        if (isMobile) {
+          setLoadingText('正在加载现状图…');
+          waitForImage(beforeImg, '现状图', function () {
+            init();
+            waitForImage(afterImg, '设计图', function () {
+              setAfterClip(pos);
+            });
+          });
+        } else if (beforeImg.complete && afterImg.complete) {
+          init();
+        } else {
+          var loaded = 0;
+          function onLoad() {
+            loaded += 1;
+            if (loaded === 2) init();
+          }
+          beforeImg.addEventListener('load', onLoad, false);
+          afterImg.addEventListener('load', onLoad, false);
+          beforeImg.addEventListener('error', onLoad, false);
+          afterImg.addEventListener('error', onLoad, false);
+        }
+      }
+
+      boot();
+    })();
   </script>
 </body>
 </html>
