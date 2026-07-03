@@ -252,13 +252,16 @@
       display: block;
     }
 
-    @media (max-width: 900px) {
-      html, body {
-        height: -webkit-fill-available;
-      }
+    .zoom-hint.desktop-hint.visible {
+      bottom: auto;
+      top: 16px;
+      color: #ccc;
+      font-size: 12px;
+    }
 
-      .page {
-        min-height: -webkit-fill-available;
+    @media (max-width: 900px) {
+      html, body, .page, .viewport {
+        height: 100%;
       }
     }
 
@@ -320,6 +323,7 @@
       var eventsBound = false;
 
       var isMobile = false;
+      var mobileLocked = false;
       var zoom = 1;
       var panX = 0;
       var panY = 0;
@@ -342,23 +346,51 @@
       })();
 
       function detectMobile() {
-        var ua = navigator.userAgent || '';
-        var isWeChat = /MicroMessenger/i.test(ua);
-        var touch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-        var narrow = window.innerWidth <= 900;
-        isMobile = isWeChat || (touch && narrow);
+        if (!mobileLocked) {
+          var ua = navigator.userAgent || '';
+          var isWeChat = /MicroMessenger/i.test(ua);
+          var isPhoneUA = /iPhone|iPod|Android.*Mobile|Windows Phone/i.test(ua);
+          var isTabletUA = /iPad|Android(?!.*Mobile)/i.test(ua);
+          var isIpadOS = /Macintosh/i.test(ua) && navigator.maxTouchPoints > 1;
+          var touch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+          var shortSide = Math.min(window.screen.width || 0, window.screen.height || 0);
+          isMobile = isWeChat || isPhoneUA || isTabletUA || isIpadOS || (touch && shortSide > 0 && shortSide <= 900);
+          mobileLocked = true;
+        }
 
         if (zoomHint) {
-          zoomHint.className = isMobile ? 'zoom-hint visible' : 'zoom-hint';
-        }
-        if (loading) {
-          loading.className = isMobile ? 'loading show' : 'loading';
+          if (isMobile) {
+            zoomHint.className = 'zoom-hint visible';
+            zoomHint.textContent = '双指捏合放大 · 双击还原';
+          } else {
+            zoomHint.className = 'zoom-hint desktop-hint visible';
+            zoomHint.textContent = '滚轮缩放 · 中键拖动平移 · 双击还原';
+          }
         }
         if (!isMobile) {
           zoom = 1;
           panX = 0;
           panY = 0;
         }
+      }
+
+      function setMobileViewportHeight() {
+        if (!isMobile) {
+          document.documentElement.style.height = '';
+          document.body.style.height = '';
+          return;
+        }
+        var h = getScreenHeight();
+        document.documentElement.style.height = h + 'px';
+        document.body.style.height = h + 'px';
+      }
+
+      function getAvailableHeight() {
+        var h = getScreenHeight();
+        if (isMobile && zoom <= 1.02) {
+          return Math.max(1, h - 48);
+        }
+        return h;
       }
 
       function setLoadingText(text) {
@@ -370,12 +402,15 @@
       }
 
       function getScreenHeight() {
+        if (window.visualViewport && window.visualViewport.height) {
+          return window.visualViewport.height;
+        }
         return window.innerHeight || document.documentElement.clientHeight || 1;
       }
 
       function getFitScale() {
         if (!imgW || !imgH) return 1;
-        return Math.min(1, window.innerWidth / imgW, getScreenHeight() / imgH);
+        return Math.min(1, window.innerWidth / imgW, getAvailableHeight() / imgH);
       }
 
       function setTransform(el, value) {
@@ -390,7 +425,7 @@
         var displayW = imgW * scale;
         var displayH = imgH * scale;
         var maxPanX = Math.max(0, (displayW - window.innerWidth) / 2);
-        var maxPanY = Math.max(0, (displayH - (getScreenHeight() - 48)) / 2);
+        var maxPanY = Math.max(0, (displayH - getAvailableHeight()) / 2);
         panX = Math.max(-maxPanX, Math.min(maxPanX, panX));
         panY = Math.max(-maxPanY, Math.min(maxPanY, panY));
       }
@@ -400,8 +435,14 @@
         compare.style.width = imgW + 'px';
         compare.style.height = imgH + 'px';
         var fit = getFitScale();
-        if (isMobile) {
+        if (zoom <= 1.02) {
+          panX = 0;
+          panY = 0;
+          zoom = 1;
+        } else {
           clampPan();
+        }
+        if (isMobile || zoom > 1) {
           setTransform(frameWrap, 'translate(' + panX + 'px, ' + panY + 'px) scale(' + (fit * zoom) + ')');
         } else {
           setTransform(frameWrap, 'scale(' + fit + ')');
@@ -494,6 +535,49 @@
         }
       }
 
+      function startDesktopPan(e) {
+        if (e.button !== 1) return;
+        gestureMode = 'pan';
+        panStartX = e.clientX;
+        panStartY = e.clientY;
+        panOriginX = panX;
+        panOriginY = panY;
+        if (e.preventDefault) e.preventDefault();
+      }
+
+      function onDesktopWheel(e) {
+        if (isMobile || !inited) return;
+        e.preventDefault();
+
+        var fit = getFitScale();
+        var oldZoom = zoom;
+        var factor = e.deltaY < 0 ? 1.12 : 0.89;
+        var newZoom = Math.max(minZoom, Math.min(maxZoom, zoom * factor));
+
+        if (newZoom <= 1.02) {
+          resetZoom();
+          return;
+        }
+
+        var rect = frameWrap.getBoundingClientRect();
+        var cx = rect.left + rect.width / 2;
+        var cy = rect.top + rect.height / 2;
+        var oldScale = fit * oldZoom;
+        var newScale = fit * newZoom;
+        var ratio = newScale / oldScale;
+
+        panX = panX + (e.clientX - cx) * (1 - ratio);
+        panY = panY + (e.clientY - cy) * (1 - ratio);
+        zoom = newZoom;
+        layoutFrame();
+      }
+
+      function onDesktopDoubleClick(e) {
+        if (isMobile) return;
+        resetZoom();
+        if (e.preventDefault) e.preventDefault();
+      }
+
       function moveSliderDrag(e) {
         if (!dragging || gestureMode !== 'slider') return;
         if (activePointerId !== null && e.pointerId !== undefined && e.pointerId !== activePointerId) return;
@@ -524,8 +608,12 @@
 
       function movePan(e) {
         if (gestureMode !== 'pan') return;
-        panX = panOriginX + (clientXFromEvent(e) - panStartX);
-        panY = panOriginY + (clientYFromEvent(e) - panStartY);
+        var x = clientXFromEvent(e);
+        var y = clientYFromEvent(e);
+        if (x === undefined && e.clientX !== undefined) x = e.clientX;
+        if (y === undefined && e.clientY !== undefined) y = e.clientY;
+        panX = panOriginX + (x - panStartX);
+        panY = panOriginY + (y - panStartY);
         layoutFrame();
         if (e.preventDefault) e.preventDefault();
       }
@@ -690,28 +778,70 @@
             viewport.addEventListener('touchcancel', onMobileTouchEnd, false);
           }
         } else if (window.PointerEvent) {
-          compare.addEventListener('pointerdown', startSliderDrag, false);
-          compare.addEventListener('pointermove', moveSliderDrag, false);
-          compare.addEventListener('pointerup', endSliderDrag, false);
-          compare.addEventListener('pointercancel', endSliderDrag, false);
+          compare.addEventListener('pointerdown', function (e) {
+            if (!isMobile && e.button === 1 && zoom > 1.05) {
+              startDesktopPan(e);
+              return;
+            }
+            startSliderDrag(e);
+          }, false);
+          compare.addEventListener('pointermove', function (e) {
+            if (gestureMode === 'pan') movePan(e);
+            else moveSliderDrag(e);
+          }, false);
+          compare.addEventListener('pointerup', function (e) {
+            if (gestureMode === 'pan') endPan();
+            else endSliderDrag(e);
+          }, false);
+          compare.addEventListener('pointercancel', function (e) {
+            if (gestureMode === 'pan') endPan();
+            else endSliderDrag(e);
+          }, false);
+          compare.addEventListener('dblclick', onDesktopDoubleClick, false);
+          viewport.addEventListener('wheel', onDesktopWheel, false);
         } else {
-          compare.addEventListener('mousedown', startSliderDrag, false);
-          document.addEventListener('mousemove', moveSliderDrag, false);
-          document.addEventListener('mouseup', endSliderDrag, false);
+          compare.addEventListener('mousedown', function (e) {
+            if (e.button === 1 && zoom > 1.05) startDesktopPan(e);
+            else startSliderDrag(e);
+          }, false);
+          document.addEventListener('mousemove', function (e) {
+            if (gestureMode === 'pan') movePan(e);
+            else moveSliderDrag(e);
+          }, false);
+          document.addEventListener('mouseup', function (e) {
+            if (gestureMode === 'pan') endPan();
+            else endSliderDrag(e);
+          }, false);
+          compare.addEventListener('dblclick', onDesktopDoubleClick, false);
+          viewport.addEventListener('wheel', onDesktopWheel, false);
         }
       }
 
       function onResize() {
-        detectMobile();
-        layoutFrame();
+        setMobileViewportHeight();
+        if (inited) {
+          if (zoom <= 1.02) {
+            panX = 0;
+            panY = 0;
+          }
+          layoutFrame();
+        }
+      }
+
+      function onOrientationChange() {
+        setTimeout(onResize, 100);
+        setTimeout(onResize, 350);
       }
 
       if (window.addEventListener) {
         window.addEventListener('resize', onResize, false);
-        window.addEventListener('orientationchange', onResize, false);
+        window.addEventListener('orientationchange', onOrientationChange, false);
         window.addEventListener('pageshow', function (e) {
-          if (e.persisted) onResize();
+          if (e.persisted) onOrientationChange();
         }, false);
+        if (window.visualViewport) {
+          window.visualViewport.addEventListener('resize', onResize, false);
+        }
       } else if (window.attachEvent) {
         window.attachEvent('onresize', onResize);
       }
@@ -723,6 +853,7 @@
         imgW = size.w;
         imgH = size.h;
         detectMobile();
+        setMobileViewportHeight();
         bindEvents();
         layoutFrame();
         setPosition(pos);
@@ -780,9 +911,11 @@
 
       function boot() {
         detectMobile();
+        setMobileViewportHeight();
         bindEvents();
 
         if (isMobile) {
+          if (loading) loading.className = 'loading show';
           setLoadingText('正在加载现状图…');
           waitForImage(beforeImg, '现状图', function () {
             init();
