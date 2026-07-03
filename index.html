@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>大觉寺总图 · 现状与设计对比</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #0a0a0a;
+    }
+
+    .page {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #111;
+    }
+
+    .frame-wrap {
+      transform-origin: center center;
+    }
+
+    .frame {
+      position: relative;
+      overflow: hidden;
+      user-select: none;
+      cursor: ew-resize;
+      touch-action: none;
+      background: #000;
+    }
+
+    .layer { position: absolute; inset: 0; }
+
+    .layer img,
+    .after-layer img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      pointer-events: none;
+    }
+
+    .after-layer {
+      position: absolute;
+      inset: 0;
+      clip-path: inset(0 calc(100% - var(--reveal, 12%)) 0 0);
+    }
+
+    .divider {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 12%;
+      width: 3px;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: 0 0 12px rgba(0, 0, 0, 0.45);
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .handle {
+      position: absolute;
+      top: 50%;
+      left: 12%;
+      transform: translate(-50%, -50%);
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.95);
+      border: 2px solid rgba(255, 255, 255, 0.6);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+      z-index: 11;
+      pointer-events: none;
+    }
+
+    .handle::before,
+    .handle::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      width: 0;
+      height: 0;
+      border-style: solid;
+      transform: translateY(-50%);
+    }
+
+    .handle::before {
+      left: 10px;
+      border-width: 6px 8px 6px 0;
+      border-color: transparent #555 transparent transparent;
+    }
+
+    .handle::after {
+      right: 10px;
+      border-width: 6px 0 6px 8px;
+      border-color: transparent transparent transparent #555;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="frame-wrap" id="frameWrap">
+      <div class="frame" id="compare">
+        <div class="layer">
+          <img src="before.jpg" alt="现状" id="beforeImg">
+        </div>
+        <div class="after-layer">
+          <img src="after.jpg" alt="设计总图" id="afterImg">
+        </div>
+        <div class="divider" id="divider"></div>
+        <div class="handle" id="handle"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const frameWrap = document.getElementById('frameWrap');
+    const compare = document.getElementById('compare');
+    const beforeImg = document.getElementById('beforeImg');
+    const afterImg = document.getElementById('afterImg');
+    const divider = document.getElementById('divider');
+    const handle = document.getElementById('handle');
+
+    let dragging = false;
+    let activePointer = null;
+    let dragOffset = 0;
+    let pos = 0.12;
+    let imgW = 0;
+    let imgH = 0;
+
+    function layoutFrame() {
+      if (!imgW || !imgH) return;
+      compare.style.width = imgW + 'px';
+      compare.style.height = imgH + 'px';
+      const scale = Math.min(1, window.innerWidth / imgW, window.innerHeight / imgH);
+      frameWrap.style.transform = 'scale(' + scale + ')';
+    }
+
+    function setPosition(ratio) {
+      pos = Math.max(0, Math.min(1, ratio));
+      const pct = (pos * 100) + '%';
+      compare.style.setProperty('--reveal', pct);
+      divider.style.left = pct;
+      handle.style.left = pct;
+    }
+
+    function ratioFromEvent(e) {
+      const rect = compare.getBoundingClientRect();
+      return (e.clientX - rect.left) / rect.width;
+    }
+
+    compare.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0) return;
+      dragging = true;
+      activePointer = e.pointerId;
+      dragOffset = ratioFromEvent(e) - pos;
+      compare.setPointerCapture(e.pointerId);
+      e.preventDefault();
+    });
+
+    compare.addEventListener('pointermove', (e) => {
+      if (!dragging || e.pointerId !== activePointer) return;
+      setPosition(ratioFromEvent(e) - dragOffset);
+    });
+
+    function endDrag(e) {
+      if (!dragging || (e && e.pointerId !== activePointer)) return;
+      dragging = false;
+      activePointer = null;
+      if (e) compare.releasePointerCapture(e.pointerId);
+    }
+
+    compare.addEventListener('pointerup', endDrag);
+    compare.addEventListener('pointercancel', endDrag);
+    window.addEventListener('resize', layoutFrame);
+
+    function init() {
+      imgW = beforeImg.naturalWidth;
+      imgH = beforeImg.naturalHeight;
+      layoutFrame();
+      setPosition(pos);
+    }
+
+    if (beforeImg.complete && afterImg.complete) {
+      init();
+    } else {
+      let loaded = 0;
+      function onLoad() {
+        loaded += 1;
+        if (loaded === 2) init();
+      }
+      beforeImg.addEventListener('load', onLoad);
+      afterImg.addEventListener('load', onLoad);
+    }
+  </script>
+</body>
+</html>
